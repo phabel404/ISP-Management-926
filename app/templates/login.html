@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="id" data-theme="system">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login — SambiraPandoraBox</title>
+<link rel="stylesheet" href="/static/css/app.css"><script src="/static/js/app.js" defer></script></head>
+<body>
+<div class="auth-wrap"><div class="auth-card">
+  <div style="text-align:center;margin-bottom:16px">
+    <div style="display:inline-flex;width:44px;height:44px;border-radius:9px;background:var(--accent);color:#fff;align-items:center;justify-content:center;font-weight:800;font-size:1.2rem">PB</div>
+    <h1 style="font-size:1.15rem;margin-top:8px">SambiraPandoraBox</h1>
+    <small>Panel Operasional ISP</small>
+  </div>
+  {% if error %}<div class="err-note">{{ error }}</div>{% endif %}
+  <form method="post" action="/login">
+    <div class="field" style="margin-bottom:10px"><label>Username</label>
+      <input name="username" required autofocus autocomplete="username" placeholder="admin"></div>
+    <div class="field" style="margin-bottom:14px"><label>Kata Sandi</label>
+      <input name="password" type="password" required autocomplete="current-password" placeholder="••••••••"></div>
+    <button class="btn p" style="width:100%;justify-content:center" type="submit">Masuk</button>
+  </form>
+  <p style="text-align:center;margin-top:12px"><a href="/forgot-password">Lupa kata sandi?</a> · <a href="/sambutan">Halaman publik</a></p>
+  <div class="demo-note" style="margin-top:16px"><b>Akun demo:</b><br>
+   admin / admin123 (Super Admin) · admin2 / admin123 (Admin)<br>
+   operator / operator123 (Operator) · finance / finance123 (Finance)</div>
+</div></div>
+<div id="toasts"></div>
+</body></html>

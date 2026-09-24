@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% set has = a and a.id is defined and a.id %}
+{% set v = a or {} %}
+{% block content %}
+<div class="pagehead"><a class="btn o s" href="/pppoe">{{ icon('back') }} Kembali</a><h1>{{ 'Edit Akun PPPoE' if has else 'Buat Akun PPPoE' }}</h1></div>
+{% if errors is defined and errors %}<div class="err-note"><b>Periksa isian:</b> {{ errors.values() | list | join(' · ') }}</div>{% endif %}
+<form method="post" action="/pppoe/save">
+{% if has %}<input type="hidden" name="id" value="{{ v.id }}">{% endif %}
+<div class="card"><div class="bd"><div class="fgrid">
+ <div class="field {{ 'invalid' if errors is defined and errors.username }}"><label>Username *</label><input name="username" required value="{{ v.username if has else '' }}"></div>
+ <div class="field {{ 'invalid' if errors is defined and errors.password }}"><label>Password {% if has %}(kosongkan jika tidak diubah){% else %}*{% endif %}</label><input name="password" value="" {% if not has %}required{% endif %}></div>
+ <div class="field"><label>Pelanggan</label><select name="customer_id"><option value="">— tanpa pelanggan —</option>
+  {% for c in custs %}<option value="{{ c.id }}" {{ 'selected' if has and v.customer_id==c.id }}>{{ c.name }} ({{ c.code }})</option>{% endfor %}</select></div>
+ <div class="field"><label>Paket/Profil</label><select name="package_id"><option value="">{{ ('Profil manual: ' ~ v.profile) if (has and not v.package_id) else '— pilih paket —' }}</option>
+  {% for p in pkgs %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}</select>
+  <div class="hint">Nama profil mengikuti nama paket terpilih.</div></div>
+ <div class="field"><label>Router</label><select name="router_id"><option value="">—</option>
+  {% for r in routers %}<option value="{{ r.id }}" {{ 'selected' if has and v.router_id==r.id }}>{{ r.name }}</option>{% endfor %}</select></div>
+ <div class="field"><label>IP Address (opsional)</label><input name="ip_addr" value="{{ v.ip_addr if has else '' }}" placeholder="mis. 10.5.50.12/24"></div>
+ <div class="field"><label>Status</label><select name="status">
+  <option value="aktif" {{ 'selected' if has and v.status=='aktif' }}>aktif</option>
+  <option value="disabled" {{ 'selected' if has and v.status=='disabled' }}>disabled</option></select></div>
+</div></div></div>
+<div class="btnrow"><button class="btn p">{{ icon('check') }} Simpan</button><a class="btn o" href="/pppoe">Batal</a></div>
+</form>
+{% if not has %}<p class="demo-note">Akun hanya tersimpan di database aplikasi (adapter DEMO). Pembuatan akun di RouterOS sungguhan belum diimplementasi.</p>{% endif %}
+{% endblock %}

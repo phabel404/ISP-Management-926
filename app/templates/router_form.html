@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% set has = r and r.id is defined and r.id %}{% set v = r or {} %}
+{% block content %}
+<div class="pagehead"><a class="btn o s" href="/routers">{{ icon('back') }} Kembali</a><h1>{{ 'Edit Router' if has else 'Tambah Router' }}</h1></div>
+{% if errors is defined and errors %}<div class="err-note">{{ errors.values() | list | join(' · ') }}</div>{% endif %}
+<form method="post" action="/routers/save">{% if has %}<input type="hidden" name="id" value="{{ v.id }}">{% endif %}
+<div class="card"><div class="bd"><div class="fgrid">
+ <div class="field {{ 'invalid' if errors is defined and errors.name }}"><label>Nama router *</label><input name="name" required value="{{ v.name if has else '' }}"></div>
+ <div class="field {{ 'invalid' if errors is defined and errors.host }}"><label>IP / hostname *</label><input name="host" required value="{{ v.host if has else '' }}" placeholder="10.10.0.1 atau router.isp.local"></div>
+ <div class="field"><label>Port API</label><input name="port" type="number" value="{{ v.port if has else 8728 }}"></div>
+ <div class="field"><label>Versi RouterOS</label><input name="version" value="{{ v.version if has else '' }}" placeholder="6.49.10"></div>
+ <div class="field"><label>Lokasi</label><input name="location" value="{{ v.location if has else '' }}"></div>
+ <div class="field"><label>Identity</label><input name="identity" value="{{ v.identity if has else '' }}"></div>
+</div></div></div>
+<div class="btnrow"><button class="btn p">{{ icon('check') }} Simpan</button><a class="btn o" href="/routers">Batal</a></div></form>
+{% endblock %}

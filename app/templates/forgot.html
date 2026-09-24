@@ -1,0 +1,15 @@
+{% extends "base_min.html" %}
+{% block title %}Lupa Kata Sandi — SambiraPandoraBox{% endblock %}
+{% block body %}
+<h1>Lupa Kata Sandi</h1>
+<p class="muted">Masukkan email akun Anda. Sistem akan membuat token reset.</p>
+{% if result_msg %}<div class="demo-note">{{ result_msg }}</div>
+  {% if reset_token %}<p>Terbuka untuk mode DEMO karena SMTP tidak tersedia di lingkungan ini.<br>
+  <a href="/reset-password?token={{ reset_token }}">/reset-password?token={{ reset_token }}</a></p>{% endif %}
+{% endif %}
+<form method="post" class="card" style="max-width:420px"><div class="bd">
+  <div class="field"><label>Email</label><input name="email" type="email" required placeholder="admin@spb.local"></div>
+  <div style="margin-top:10px"><button class="btn p">Kirim Permintaan Reset</button></div>
+</div></form>
+<p><a href="/login">← Kembali ke login</a></p>
+{% endblock %}

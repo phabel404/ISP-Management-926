@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% set page_title = "Profil Saya" %}
+{% block content %}
+<div class="pagehead"><h1>Profil Saya</h1></div>
+<div class="grid g2">
+ <div class="card"><div class="hd">Informasi Akun</div><div class="bd">
+  <dl class="kv">
+   <dt>Nama</dt><dd>{{ me.name }}</dd>
+   <dt>Username</dt><dd>{{ me.username }}</dd>
+   <dt>Email</dt><dd>{{ me.email or '-' }}</dd>
+   <dt>Peran</dt><dd><span class="badge b-info">{{ roles.get(me.role, me.role) }}</span></dd>
+   <dt>Status</dt><dd><span class="badge {{ 'b-ok' if me.active else 'b-err' }}">{{ 'Aktif' if me.active else 'Nonaktif' }}</span></dd>
+  </dl>
+ </div></div>
+ <div class="card"><div class="hd">Ganti Kata Sandi</div><div class="bd">
+  <form method="post" action="/profile/password">
+   <div class="fgrid">
+    <div class="field span2"><label>Kata sandi lama</label><input type="password" name="old" required></div>
+    <div class="field"><label>Kata sandi baru</label><input type="password" name="new" required minlength="6"><div class="hint">Minimal 6 karakter.</div></div>
+    <div class="field"><label>Konfirmasi baru</label><input type="password" name="confirm" required minlength="6"></div>
+   </div>
+   <div style="margin-top:12px"><button class="btn p">Simpan Kata Sandi</button></div>
+  </form>
+ </div></div>
+</div>
+{% endblock %}

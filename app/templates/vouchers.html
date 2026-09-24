@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% set page_title = "Voucher Hotspot" %}
+{% block content %}
+<div class="pagehead"><h1>Generator Voucher Hotspot</h1>
+ {% if batch %}<a class="btn o" href="/export/vouchers.csv?batch={{ batch }}" download>{{ icon('download') }} Export CSV Batch Ini</a>
+ <button class="btn p no-print" onclick="window.print()">{{ icon('print') }} Cetak Voucher</button>{% endif %}</div>
+<div class="demo-note no-print">Voucher disimpan sebagai record nyata di database aplikasi (tabel vouchers + hotspot_users). Pendaftaraan ke RouterOS sungguhan TIDAK dilakukan (DEMO). Regenerasi hanya terjadi bila tombol Generate ditekan.</div>
+
+<div class="card no-print"><div class="hd">Generate Batch Baru</div><div class="bd">
+{% if errors is defined and errors %}<div class="err-note">{{ errors.values() | list | join(' · ') }}</div>{% endif %}
+<form method="post" action="/hotspot/vouchers/generate"><div class="fgrid">
+ <div class="field"><label>Profil paket</label><select name="profile">
+  {% for p in profiles %}<option value="{{ p[0] }}" {{ 'selected' if formdata and formdata.profile==p[0] }}>{{ p[0] }} ({{ p[1] }} hari, Rp{{ '%d' % p[2] }})</option>{% endfor %}</select></div>
+ <div class="field {{ 'invalid' if errors is defined and errors.qty }}"><label>Jumlah *</label><input type="number" name="qty" min="1" max="500" value="{{ formdata.qty if formdata else 10 }}"></div>
+ <div class="field"><label>Prefix username</label><input name="prefix" value="{{ formdata.prefix if formdata else 'hs' }}"></div>
+ <div class="field {{ 'invalid' if errors is defined and errors.pwlen }}"><label>Panjang password</label><input type="number" name="pwlen" min="4" max="16" value="{{ formdata.pwlen if formdata else 8 }}"></div>
+ <div class="field {{ 'invalid' if errors is defined and errors.days }}"><label>Masa berlaku (hari)</label><input type="number" name="days" min="1" max="365" value="{{ formdata.days if formdata else 1 }}"></div>
+ <div class="field"><label>Harga per voucher (Rp)</label><input type="number" name="price" min="0" value="{{ formdata.price if formdata else 10000 }}"></div>
+</div><div class="btnrow" style="margin-top:10px"><button class="btn p">{{ icon('ticket') }} Generate Voucher</button></div></form>
+</div></div>
+
+{% if batches %}
+<div class="toolbar no-print"><strong style="font-size:.8rem">Batch:</strong>
+ {% for b in batches %}<a class="btn s {{ 'p' if b.batch==batch else 'o' }}" href="/hotspot/vouchers?batch={{ b.batch }}">{{ b.batch }} ({{ b.n }})</a>{% endfor %}</div>
+{% endif %}
+
+{% if rows %}
+<h3>Voucher batch <code>{{ batch }}</code> — {{ rows | length }} lembar</h3>
+<div class="vouchers">
+{% for v in rows %}<div class="vcard">
+ <div style="display:flex;justify-content:space-between"><b>{{ settings.get('isp_name','SambiraNet') }}</b><small>{{ v.profile }}</small></div>
+ <hr style="border:none;border-top:1px dashed var(--border)">
+ <div>User: <span class="code">{{ v.username }}</span></div>
+ <div>Kode: <span class="code">{{ v.password }}</span></div>
+ <div><small>Berlaku {{ v.validity_days }} hari · {{ rp(v.price) }}</small></div>
+</div>{% endfor %}</div>
+{% elif not rows and not batches %}
+<div class="empty">{{ icon('ticket') }} Belum ada voucher. Gunakan form Generate di atas.</div>
+{% endif %}
+{% endblock %}

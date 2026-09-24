@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% set page_title = "Paket Internet" %}
+{% block content %}
+<div class="pagehead"><h1>Paket Internet</h1></div>
+
+<div class="card"><div class="hd">{{ 'Edit Paket: ' ~ (editing.name if editing.name is defined else editing['name']) if editing else 'Tambah / Ubah Paket' }}</div><div class="bd">
+<form method="post" action="/packages/save">
+{% if editing and editing.id is defined and editing['id'] %}<input type="hidden" name="id" value="{{ editing['id'] }}">{% endif %}
+<div class="fgrid">
+ <div class="field {{ 'invalid' if errors is defined and errors.name }}"><label>Nama paket *</label>
+  <input name="name" required value="{{ editing['name'] if editing else '' }}" placeholder="mis. NET 30 Mbps"></div>
+ <div class="field"><label>Download (Mbps)</label><input name="download" type="number" step="0.1" min="0" value="{{ editing['download_mbps'] if editing else 10 }}"></div>
+ <div class="field"><label>Upload (Mbps)</label><input name="upload" type="number" step="0.1" min="0" value="{{ editing['upload_mbps'] if editing else 5 }}"></div>
+ <div class="field {{ 'invalid' if errors is defined and errors.price }}"><label>Harga bulanan (Rp) *</label>
+  <input name="price" type="number" min="1" required value="{{ editing['price'] if editing else 150000 }}"></div>
+ <div class="field"><label>Status</label><select name="status">
+  {% for s,l in [('aktif','Aktif'),('nonaktif','Nonaktif')] %}<option value="{{ s }}" {{ 'selected' if editing and editing['status']==s }}>{{ l }}</option>{% endfor %}</select></div>
+ <div class="field span2"><label>Deskripsi</label><input name="description" value="{{ editing['description'] if editing else '' }}"></div>
+</div>
+<div class="btnrow" style="margin-top:10px"><button class="btn p">{{ icon('check') }} Simpan Paket</button>
+{% if editing %}<a class="btn o" href="/packages">Batal edit</a>{% endif %}</div>
+</form></div></div>
+
+<div class="card"><div class="hd">Daftar Paket ({{ rows | length }})</div><div class="tblwrap"><table class="tbl">
+<tr><th>Nama</th><th class="num">Down</th><th class="num">Up</th><th class="num">Harga/bln</th><th>Deskripsi</th><th>Pemakaian</th><th>Status</th><th>Aksi</th></tr>
+{% for p in rows %}<tr>
+ <td><b>{{ p.name }}</b></td><td class="num">{{ p.download_mbps }} Mbps</td><td class="num">{{ p.upload_mbps }} Mbps</td>
+ <td class="num">{{ rp(p.price) }}</td><td class="wrap muted">{{ p.description or '-' }}</td>
+ <td><a href="/customers?pkg={{ p.id }}">{{ p.usage }} pelanggan</a></td>
+ <td>{% if p.status=='aktif' %}<span class="badge b-ok">Aktif</span>{% else %}<span class="badge b-mute">Nonaktif</span>{% endif %}</td>
+ <td><div class="btnrow">
+  <a class="btn s" href="/packages?edit={{ p.id }}">{{ icon('pencil') }}</a>
+  <form class="inline" method="post" action="/packages/{{ p.id }}/toggle"><button class="btn s" title="{{ 'Nonaktifkan' if p.status=='aktif' else 'Aktifkan' }}">{{ icon('power') }}</button></form>
+  <form class="inline" method="post" action="/packages/{{ p.id }}/delete" data-confirm="Hapus paket {{ p.name }}? Paket yang dipakai pelanggan tidak akan terhapus." data-confirm-title="Hapus Paket"><button class="btn s d">{{ icon('trash') }}</button></form>
+ </div></td></tr>
+{% else %}<tr><td colspan="8"><div class="empty">Belum ada paket.</div></td></tr>{% endfor %}
+</table></div></div>
+<p><small class="muted">Penugasan paket ke pelanggan dilakukan pada form pelanggan (dropdown Paket). Paket nonaktif disembunyikan dari pilihan saat menambah pelanggan baru.</small></p>
+{% endblock %}

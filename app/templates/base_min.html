@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="id" data-theme="{{ settings.get('theme','system') }}" data-theme-mode="{{ settings.get('theme','system') }}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}SambiraPandoraBox{% endblock %}</title>
+<link rel="stylesheet" href="/static/css/app.css"><script src="/static/js/app.js" defer></script></head>
+<body><div class="content" style="max-width:720px;margin:36px auto">{% block body %}{% endblock %}</div>
+<div id="toasts"></div></body></html>
