@@ -1,4 +1,4 @@
-# SambiraPandoraBox — ISP Operations Dashboard
+# ISP Operations Dashboard
 
 Aplikasi manajemen ISP (pelanggan, PPPoE, Hotspot & voucher, router/monitoring, billing,
 pembayaran, keuangan, expenses, backup, notifikasi, QRIS, landing page editor, user & role,
