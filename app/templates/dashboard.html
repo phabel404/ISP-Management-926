@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% set page_title = "Dashboard" %}
+{% block content %}
+<div class="pagehead"><h1>Dashboard Operasional</h1>
+ <small class="muted">{{ today }} · zona waktu {{ settings.get('timezone','Asia/Jakarta') }}</small></div>
+
+<div class="grid g6">
+ <a class="stat" href="/customers"><div class="lbl">Total Pelanggan</div><div class="val">{{ stats.cust_total }}</div><div class="sub">lihat semua →</div></a>
+ <a class="stat ok" href="/customers?status=aktif"><div class="lbl">Aktif</div><div class="val">{{ stats.cust_active }}</div><div class="sub">pelanggan aktif</div></a>
+ <a class="stat warn" href="/customers?status=suspend"><div class="lbl">Suspend</div><div class="val">{{ stats.cust_suspend }}</div><div class="sub">perlu tindakan</div></a>
+ <a class="stat err" href="/billing?status=belum_bayar"><div class="lbl">Invoice Belum Bayar</div><div class="val">{{ stats.inv_unpaid }}</div><div class="sub">{{ rp(stats.unpaid_amount) }} outstanding</div></a>
+ <a class="stat" href="/finance"><div class="lbl">Revenue Bulan Ini</div><div class="val" style="font-size:1.05rem">{{ rp(stats.revenue_month) }}</div><div class="sub">dari pembayaran</div></a>
+ <a class="stat" href="/pppoe?state=online"><div class="lbl">PPPoE Online</div><div class="val">{{ stats.pppoe_online }}/{{ stats.pppoe_total }}</div><div class="sub">sesi aktif</div></a>
+</div>
+<div class="grid g4" style="margin-top:12px">
+ <a class="stat" href="/hotspot?state=unused"><div class="lbl">Voucher Aktif (belum terpakai)</div><div class="val">{{ stats.hs_active }}</div><div class="sub">hotspot</div></a>
+ <a class="stat err" href="/billing/overdue"><div class="lbl">Lewat Jatuh Tempo</div><div class="val">{{ stats.overdue }}</div><div class="sub">invoice overdue</div></a>
+ {% set on = routers | selectattr('status','equalto','ok') | list | length %}
+ <a class="stat {{ 'ok' if on==routers|length else 'warn' }}" href="/routers"><div class="lbl">Router Online</div><div class="val">{{ on }}/{{ routers|length }}</div><div class="sub">perangkat</div></a>
+ <a class="stat" href="/monitoring"><div class="lbl">Monitoring</div><div class="val">→</div><div class="sub">buka halaman monitoring</div></a>
+</div>
+
+<div class="grid g2" style="margin-top:14px">
+ <div class="card"><div class="hd">Pendapatan 6 Bulan Terakhir (dari pembayaran tersimpan)</div>
+  <div class="bd"><svg class="chart" viewBox="0 0 600 150" data-fmt="rp" data-series='{{ chart_rev }}'></svg></div></div>
+ <div class="card"><div class="hd">Status Invoice</div>
+  <div class="bd"><svg class="chart" viewBox="0 0 600 150" data-series='{{ chart_status }}'></svg></div></div>
+</div>
+
+<div class="grid g3">
+ <div class="card"><div class="hd">Status Router</div><div class="tblwrap"><table class="tbl">
+  <tr><th>Router</th><th>Status</th><th>Cek terakhir</th></tr>
+  {% for r in routers %}<tr>
+   <td><a href="/routers/{{ r.id }}">{{ r.name }}</a><br><small class="muted">{{ r.host }} · mode API: {{ r.api_mode | upper }}</small></td>
+   <td>{% if r.status=='ok' %}<span class="badge b-ok"><span class="dot on"></span>Online</span>
+       {% elif r.status=='offline' %}<span class="badge b-err"><span class="dot off"></span>Offline</span>
+       {% else %}<span class="badge b-mute">Tidak diketahui</span>{% endif %}</td>
+   <td><small>{{ r.last_checked or '-' }}</small></td></tr>
+  {% endfor %}</table></div>
+  {% if routers | rejectattr('api_mode','equalto','real') | list | length > 0 %}
+  <div class="bd" style="padding-top:0"><small class="muted">Catatan: angka CPU/uptime router bersumber dari adapter DEMO kecuali ditandai REAL.</small></div>{% endif %}
+ </div>
+
+ <div class="card"><div class="hd">Pembayaran Terbaru</div><div class="tblwrap"><table class="tbl">
+  <tr><th>Ref</th><th>Pelanggan</th><th class="num">Nominal</th></tr>
+  {% for p in payments %}<tr><td><a href="/payments/{{ p.id }}">{{ p.ref }}</a><br><small class="muted">{{ p.date }} · {{ p.method }}</small></td>
+   <td>{{ p.cname }}</td><td class="num">{{ rp(p.amount) }}</td></tr>
+  {% else %}<tr><td colspan="3" class="empty">Belum ada pembayaran.</td></tr>{% endfor %}
+ </table></div></div>
+
+ <div class="card"><div class="hd">Event Jaringan Terbaru</div><div class="tblwrap"><table class="tbl">
+  <tr><th>Waktu</th><th>Router</th><th>Info</th></tr>
+  {% for e in events %}<tr><td><small>{{ e.time }}</small></td><td>{{ e.router_name }}</td>
+   <td class="wrap">{% if e.type=='alert' %}<span class="badge b-err">ALERT</span>{% elif e.type=='warn' %}<span class="badge b-warn">WARN</span>{% else %}<span class="badge b-info">INFO</span>{% endif %} {{ e.message }}</td></tr>
+  {% else %}<tr><td colspan="3" class="empty">Belum ada event.</td></tr>{% endfor %}
+ </table></div></div>
+</div>
+
+<div class="card"><div class="hd">Aktivitas Operasional Terbaru</div><div class="tblwrap"><table class="tbl">
+ <tr><th>Waktu</th><th>Pengguna</th><th>Aksi</th><th>Objek</th><th>Detail</th></tr>
+ {% for a in acts %}<tr><td><small>{{ a.ts }}</small></td><td>{{ a.user }}</td><td><code>{{ a.action }}</code></td><td>{{ a.obj }}</td><td class="wrap">{{ a.detail }}</td></tr>
+ {% else %}<tr><td colspan="5" class="empty">Belum ada aktivitas.</td></tr>{% endfor %}
+</table></div>
+<p style="margin:0"><a href="/activity-log">Lihat log lengkap →</a></p></div>
+{% endblock %}

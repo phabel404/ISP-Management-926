@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="pagehead"><a class="btn o s" href="/pppoe">{{ icon('back') }} Daftar</a>
+ <h1><code>{{ a.username }}</code></h1>
+ {% if a.status=='aktif' %}<span class="badge b-info">aktif</span>{% else %}<span class="badge b-err">disabled</span>{% endif %}
+ {% if a.online %}<span class="badge b-ok"><span class="dot on"></span>Sesi online</span>{% else %}<span class="badge b-mute"><span class="dot off"></span>offline</span>{% endif %}
+ <div style="flex:1"></div>
+ <a class="btn s" href="/pppoe/{{ a.id }}/edit">{{ icon('pencil') }} Edit</a>
+ {% if a.online %}<form class="inline" method="post" action="/pppoe/{{ a.id }}/disconnect" data-confirm="Putus sesi {{ a.username }}? (DEMO adapter — perintah tidak dikirim ke RouterOS)" data-confirm-title="Putuskan Sesi"><button class="btn s">✂ Putuskan Sesi</button></form>{% endif %}
+ <form class="inline" method="post" action="/pppoe/{{ a.id }}/toggle"><button class="btn s">{{ icon('power') }} {{ 'Aktifkan' if a.status=='disabled' else 'Nonaktifkan' }}</button></form>
+ {% if user.role in ('superadmin','admin') %}
+ <form class="inline" method="post" action="/pppoe/{{ a.id }}/delete" data-confirm="Hapus akun PPPoE {{ a.username }}?" data-confirm-title="Hapus Akun"><button class="btn s d">{{ icon('trash') }} Hapus</button></form>{% endif %}
+</div>
+<div class="demo-note">MODE: {{ a.service | default('DEMO') }} — seluruh field sesi adalah state aplikasi, BUKAN telemetri RouterOS live.</div>
+<div class="grid g2">
+<div class="card"><div class="hd">Detail Akun</div><div class="bd"><dl class="kv">
+ <dt>Username</dt><dd><code>{{ a.username }}</code></dd>
+ <dt>Password</dt><dd><code>{{ '•'*6 }} <small class="muted">(tersimpan — lihat menu Edit untuk mengubah)</small></code></dd>
+ <dt>Pelanggan</dt><dd>{% if a.customer_id %}<a href="/customers/{{ a.customer_id }}">{{ a.cname }} ({{ a.ccode }})</a>{% else %}-{% endif %}</dd>
+ <dt>Profil</dt><dd>{{ a.profile }}</dd>
+ <dt>Router</dt><dd>{% if a.router_id %}<a href="/routers/{{ a.router_id }}">{{ a.rname }}</a>{% else %}-{% endif %}</dd>
+ <dt>IP assigned</dt><dd><code>{{ a.ip_addr or '-' }}</code></dd>
+</dl></div></div>
+<div class="card"><div class="hd">Sesi</div><div class="bd"><dl class="kv">
+ <dt>Status sesi</dt><dd>{{ 'ONLINE' if a.online else 'OFFLINE' }}</dd>
+ <dt>Uptime sesi</dt><dd>{{ a.session_uptime }}</dd>
+ <dt>Terakhir terlihat</dt><dd>{{ a.last_seen or '-' }}</dd>
+ <dt>Status akun</dt><dd>{{ a.status }}</dd>
+</dl></div></div>
+</div>
+<div class="card"><div class="hd">Catatan aktivitas akun ini</div><div class="tblwrap"><table class="tbl">
+<tr><th>Waktu</th><th>Pengguna</th><th>Aksi</th><th>Detail</th></tr>
+{% for e in evs %}<tr><td><small>{{ e.ts }}</small></td><td>{{ e.user }}</td><td><code>{{ e.action }}</code></td><td class="wrap">{{ e.detail }}</td></tr>
+{% else %}<tr><td colspan="4"><div class="empty">Belum ada aktivitas tercatat.</div></td></tr>{% endfor %}
+</table></div></div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% set page_title = "Router" %}
+{% block content %}
+<div class="pagehead"><h1>Router</h1><a class="btn p" href="/routers/new">+ Tambah Router</a></div>
+<div class="card"><div class="tblwrap"><table class="tbl">
+<tr><th>Nama</th><th>Host</th><th>RouterOS</th><th>Lokasi</th><th>Status</th><th>Uptime</th><th>CPU</th><th>Memori</th><th>PPPoE online</th><th>Cek terakhir</th><th></th></tr>
+{% for r in rows %}<tr>
+ <td><a href="/routers/{{ r.id }}"><b>{{ r.name }}</b></a><br><small class="muted">identity: {{ r.identity or '-' }} · API mode: {{ r.api_mode | upper }}</small></td>
+ <td><code>{{ r.host }}:{{ r.port }}</code></td><td>{{ r.version }}</td><td>{{ r.location }}</td>
+ <td>{% if r.status=='ok' %}<span class="badge b-ok"><span class="dot on"></span>Online</span>
+     {% elif r.status=='offline' %}<span class="badge b-err"><span class="dot off"></span>Offline</span>
+     {% else %}<span class="badge b-mute">Tidak diketahui</span>{% endif %}</td>
+ <td>{{ r.uptime }}</td><td>{{ r.cpu }}%</td><td>{{ r.mem }}%</td>
+ <td>{{ r.ponline }}/{{ r.pcount }}</td><td><small>{{ r.last_checked or 'belum pernah' }}</small></td>
+ <td><a class="btn s" href="/routers/{{ r.id }}">{{ icon('eye') }}</a></td></tr>
+{% endfor %}</table></div></div>
+<p class="demo-note"><small>Semua telemetri (CPU/memori/uptime) berasal dari adapter DEMO kecuali probe REAL berhasil — lihat halaman detail masing-masing router.</small></p>
+{% endblock %}

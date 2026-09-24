@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% set page_title = "Hotspot" %}
+{% block content %}
+<div class="pagehead"><h1>Pengguna Hotspot</h1><a class="btn p" href="/hotspot/vouchers">{{ icon('ticket') }} Generator Voucher</a></div>
+<form class="toolbar" method="get" action="/hotspot">
+ <input type="search" name="search" placeholder="Cari username/kode/profil…" value="{{ search }}">
+ <select name="state" data-autosubmit><option value="">Semua</option>
+  <option value="unused" {{ 'selected' if state=='unused' }}>Belum terpakai</option>
+  <option value="used" {{ 'selected' if state=='used' }}>Terpakai</option>
+  <option value="aktif" {{ 'selected' if state=='aktif' }}>Status aktif</option>
+  <option value="disabled" {{ 'selected' if state=='disabled' }}>Disabled</option></select>
+ <button class="btn">Terapkan</button><a class="btn o" href="/hotspot">Reset</a>
+</form>
+
+{% if editing %}
+<div class="card"><div class="hd">{{ 'Edit pengguna hotspot' if (editing.id is defined and editing['id']) else 'Tambah pengguna hotspot manual' }}</div><div class="bd">
+{% if errors is defined and errors %}<div class="err-note">{{ errors.values() | list | join(' · ') }}</div>{% endif %}
+<form method="post" action="/hotspot/save">
+{% if editing.id is defined and editing['id'] %}<input type="hidden" name="id" value="{{ editing['id'] }}">{% endif %}
+<div class="fgrid">
+ <div class="field"><label>Username *</label><input name="username" required value="{{ editing.username|default('') }}"></div>
+ <div class="field"><label>Password/Kode {% if not editing['id'] %}*{% endif %}</label><input name="password" value="{{ editing.password|default('') }}" {% if not editing['id'] %}required{% endif %}></div>
+ <div class="field"><label>Profil</label><input name="profile" value="{{ editing.profile|default('reguler-1hari') }}"></div>
+ <div class="field"><label>Berlaku s/d</label><input type="date" name="valid_until" value="{{ editing.valid_until|default('') }}"></div>
+ <div class="field"><label>Harga (Rp)</label><input type="number" name="price" min="0" value="{{ editing.price|default(0) }}"></div>
+ <div class="field"><label>Status</label><select name="status"><option value="aktif">aktif</option><option value="disabled" {{ 'selected' if editing.status|default('')=='disabled' }}>disabled</option></select></div>
+ <div class="field span2"><label>Catatan</label><input name="comment" value="{{ editing.comment|default('') }}"></div>
+</div>
+<div class="btnrow" style="margin-top:10px"><button class="btn p">Simpan</button><a class="btn o" href="/hotspot">Batal</a></div>
+</form></div></div>
+{% endif %}
+
+<div class="card"><div class="tblwrap"><table class="tbl">
+<tr><th>ID</th><th>Username</th><th>Kode</th><th>Profil</th><th>Berlaku s/d</th><th class="num">Harga</th><th>Dipakai</th><th>Status</th><th>Catatan</th><th>Aksi</th></tr>
+{% for h in rows %}<tr>
+ <td>{{ h.id }}</td><td><code>{{ h.username }}</code></td><td><code>{{ h.password }}</code></td><td>{{ h.profile }}</td>
+ <td>{{ h.valid_until or '-' }}</td><td class="num">{{ rp(h.price) }}</td>
+ <td>{% if h.used %}<span class="badge b-mute">terpakai {{ h.used_at or '' }}</span>{% else %}<span class="badge b-ok">belum</span>{% endif %}</td>
+ <td>{% if h.status=='aktif' %}<span class="badge b-info">aktif</span>{% else %}<span class="badge b-err">disabled</span>{% endif %}</td>
+ <td class="wrap muted">{{ h.comment or '-' }}</td>
+ <td><div class="btnrow">
+  <form class="inline" method="post" action="/hotspot/{{ h.id }}/toggle"><button class="btn s" title="{{ 'Aktifkan' if h.status=='disabled' else 'Nonaktifkan' }}">{{ icon('power') }}</button></form>
+  <form class="inline" method="post" action="/hotspot/{{ h.id }}/delete" data-confirm="Hapus {{ h.username }}?" data-confirm-title="Hapus Pengguna Hotspot"><button class="btn s d">{{ icon('trash') }}</button></form>
+ </div></td></tr>
+{% else %}<tr><td colspan="10"><div class="empty">{{ icon('wifi') }} Tidak ada pengguna. Buat lewat generator voucher.</div></td></tr>{% endfor %}
+</table></div>{% include "partials/pager.html" %}</div>
+<p><small class="muted">{{ total }} pengguna · halaman {{ page }}/{{ pages }}. Edit manual tersedia melalui tombol toggle/hapus; untuk edit detail gunakan form tambah di atas dengan field terisi (demo adapter — tidak sinkron ke RouterOS).</small></p>
+{% endblock %}

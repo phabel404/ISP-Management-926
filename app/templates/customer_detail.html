@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% set page_title = c.name %}
+{% block content %}
+<div class="pagehead">
+ <a class="btn o s" href="/customers">{{ icon('back') }} Daftar</a>
+ <h1>{{ c.name }} <small class="muted">({{ c.code }})</small></h1>
+ {% if c.status=='aktif' %}<span class="badge b-ok">Aktif</span>
+ {% elif c.status=='suspend' %}<span class="badge b-warn">Suspend</span>{% else %}<span class="badge b-mute">Nonaktif</span>{% endif %}
+ <div class="spacer" style="flex:1"></div>
+ <a class="btn s" href="/customers/{{ c.id }}/edit">{{ icon('pencil') }} Edit</a>
+ <a class="btn s" href="/billing/new?customer={{ c.id }}">{{ icon('receipt') }} Buat Invoice</a>
+ {% if c.status!='suspend' %}
+ <form class="inline" method="post" action="/customers/{{ c.id }}/status" data-confirm="Suspend {{ c.name }}? Akun PPPoE ikut disabled pada state aplikasi." data-confirm-title="Suspend"><input type="hidden" name="status" value="suspend"><button class="btn s">{{ icon('off') }} Suspend</button></form>
+ {% else %}
+ <form class="inline" method="post" action="/customers/{{ c.id }}/status"><input type="hidden" name="status" value="aktif"><button class="btn s">{{ icon('power') }} Aktifkan</button></form>
+ {% endif %}
+ {% if user.role in ('superadmin','admin') %}
+ <form class="inline" method="post" action="/customers/{{ c.id }}/delete" data-confirm="Hapus permanen pelanggan ini?" data-confirm-title="Hapus Pelanggan"><button class="btn s d">{{ icon('trash') }} Hapus</button></form>
+ {% endif %}
+</div>
+
+<div class="grid g2">
+<div class="card"><div class="hd">Identitas & Kontak</div><div class="bd"><dl class="kv">
+ <dt>Kode</dt><dd>{{ c.code }}</dd><dt>Nama</dt><dd>{{ c.name }}</dd>
+ <dt>Telepon</dt><dd>{{ c.phone or '-' }}</dd><dt>Email</dt><dd>{{ c.email or '-' }}</dd>
+ <dt>Alamat</dt><dd style="white-space:normal">{{ c.address }}</dd>
+ <dt>Tgl pasang</dt><dd>{{ c.install_date }}</dd><dt>Catatan</dt><dd style="white-space:normal">{{ c.notes or '-' }}</dd>
+</dl></div></div>
+<div class="card"><div class="hd">Layanan & Status Jaringan</div><div class="bd"><dl class="kv">
+ <dt>Paket</dt><dd>{{ c.pname or '-' }} {% if c.pprice %}<small class="muted">({{ rp(c.pprice) }}/bln)</small>{% endif %}</dd>
+ <dt>Router</dt><dd>{% if c.router_id %}<a href="/routers/{{ c.router_id }}">{{ c.rname }}</a>{% else %}-{% endif %}</dd>
+ <dt>PPPoE</dt><dd>{% if pppoe %}<a href="/pppoe/{{ pppoe.id }}"><code>{{ c.pppoe_username }}</code></a>
+   {% if pppoe.online %}<span class="badge b-ok">Online</span>{% else %}<span class="badge b-mute">Offline</span>{% endif %}
+   {% if pppoe.status=='disabled' %}<span class="badge b-err">Disabled</span>{% endif %}
+   <br><small class="muted">IP {{ pppoe.ip_addr or '-' }} · uptime {{ pppoe.session_uptime }} · terakhir terlihat {{ pppoe.last_seen }}</small>
+   {% else %}<code>{{ c.pppoe_username or '-' }}</code> <small class="muted">(belum ada akun PPPoE terdaftar)</small>{% endif %}</dd>
+ <dt>Voucher hotspot terkait</dt><dd>{{ hs_count }}</dd>
+ <dt>Hari tagih</dt><dd>Tanggal {{ c.billing_day }} setiap bulan</dd>
+ <dt>Saldo/tagihan berjalan</dt><dd><b>{{ rp(c.balance) }}</b></dd>
+ <dt>Status</dt><dd>{{ c.status }}</dd>
+</dl></div></div>
+</div>
+
+<div class="tabs">
+ <a href="?tab=tagihan" class="{{ 'active' if tab=='tagihan' }}">Riwayat Tagihan ({{ inv_total }})</a>
+ <a href="?tab=pembayaran" class="{{ 'active' if tab=='pembayaran' }}">Riwayat Pembayaran</a>
+ <a href="?tab=aktivitas" class="{{ 'active' if tab=='aktivitas' }}">Aktivitas</a>
+</div>
+
+{% if tab=='tagihan' %}
+<div class="card"><div class="tblwrap"><table class="tbl">
+<tr><th>Nomor</th><th>Periode</th><th>Jatuh tempo</th><th class="num">Nominal</th><th class="num">Dibayar</th><th>Status</th><th></th></tr>
+{% for i in invoices %}<tr>
+ <td><a href="/billing/{{ i.id }}">{{ i.number }}</a></td><td>{{ i.period }}</td><td>{{ i.due_date }}</td>
+ <td class="num">{{ rp(i.amount) }}</td><td class="num">{{ rp(i.paid_amount) }}</td>
+ <td>{% if i.status=='lunas' %}<span class="badge b-ok">Lunas</span>{% elif i.status=='lewat_jatuh_tempo' %}<span class="badge b-err">Overdue</span>{% elif i.status=='belum_bayar' %}<span class="badge b-warn">Belum bayar</span>{% elif i.status=='draft' %}<span class="badge b-mute">Draft</span>{% else %}<span class="badge b-mute">Batal</span>{% endif %}</td>
+ <td><a class="btn s" href="/billing/{{ i.id }}">Detail</a></td></tr>
+{% else %}<tr><td colspan="7"><div class="empty">Belum ada tagihan untuk pelanggan ini.</div></td></tr>{% endfor %}
+</table></div>{% include "partials/pager.html" %}</div>
+
+{% elif tab=='pembayaran' %}
+<div class="card"><div class="tblwrap"><table class="tbl">
+<tr><th>Ref</th><th>Tanggal</th><th>Invoice</th><th class="num">Nominal</th><th>Metode</th></tr>
+{% for p in pays %}<tr><td><a href="/payments/{{ p.id }}">{{ p.ref }}</a></td><td>{{ p.date }}</td>
+ <td>{% if p.inv %}<a href="/billing/{{ p.invoice_id }}">{{ p.inv }}</a>{% else %}-{% endif %}</td>
+ <td class="num">{{ rp(p.amount) }}</td><td>{{ p.method }}</td></tr>
+{% else %}<tr><td colspan="5"><div class="empty">Belum ada pembayaran.</div></td></tr>{% endfor %}
+</table></div></div>
+
+{% else %}
+<div class="card"><div class="tblwrap"><table class="tbl">
+<tr><th>Waktu</th><th>Pengguna</th><th>Aksi</th><th>Objek</th><th>Detail</th></tr>
+{% for l in logs %}<tr><td><small>{{ l.ts }}</small></td><td>{{ l.user }}</td><td><code>{{ l.action }}</code></td><td>{{ l.obj }}</td><td class="wrap">{{ l.detail }}</td></tr>
+{% else %}<tr><td colspan="5"><div class="empty">Belum ada aktivitas tercatat untuk pelanggan ini.</div></td></tr>{% endfor %}
+</table></div></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,68 @@
+{% from "partials/icons.html" import icon %}
+<!doctype html>
+<html lang="id" data-theme="{{ 'dark' if settings.get('theme')=='dark' else ('light' if settings.get('theme')=='light' else 'system') }}"
+      data-theme-mode="{{ settings.get('theme','system') }}" data-compact="{{ settings.get('compact','0') }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ page_title or (active or 'Dashboard') }} — {{ app_name }}{% endblock %}</title>
+<link rel="stylesheet" href="/static/css/app.css">
+<script src="/static/js/app.js" defer></script>
+</head>
+<body>
+<div class="skel" aria-hidden="true"></div>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">PB</div>
+      <div><b>{{ settings.get('isp_name','SambiraNet') }}</b><span>{{ app_name }} • Ops</span></div>
+    </div>
+    <nav class="side-nav" aria-label="Navigasi utama">
+      {% set last_sec = [] %}
+      {% for label, href, ic, mod, key in nav %}
+        {% if loop.index == 1 %}<div class="navsec">Utama</div>{% endif %}
+        {% if key == 'billing' and (last_sec | length == 0) %}<div class="navsec">Keuangan</div>{% endif %}
+        {% if key == 'backups' %}<div class="navsec">Operasional</div>{% endif %}
+        {% if key == 'users' %}<div class="navsec">Administrasi</div>{% endif %}
+        {% if last_sec.append(key) %}{% endif %}
+        <a href="{{ href }}" class="{{ 'active' if active == key }}">{{ icon(ic) }}<span>{{ label }}</span></a>
+      {% endfor %}
+    </nav>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="hamburger" type="button" aria-label="Menu">{% raw %}☰{% endraw %}</button>
+      <div class="crumb">{{ page_title or active or 'Panel' }}</div>
+      <div class="spacer"></div>
+      <button class="btn s o" type="button" title="Ganti tema terang/gelap/sistem"
+              onclick="spbSetTheme(document.documentElement.getAttribute('data-theme-mode')==='dark'?'light':(document.documentElement.getAttribute('data-theme-mode')==='light'?'system':'dark'))">
+        {{ icon('sun') if settings.get('theme')!='dark' else icon('moon') }}<span>Tema: {{ {'dark':'Gelap','light':'Terang','system':'Sistem'}.get(settings.get('theme','system'),'Sistem') }}</span>
+      </button>
+      {% if user %}
+      <div class="userchip">
+        <div class="avatar">{{ user.name[0] | upper }}</div>
+        <div style="line-height:1.15">
+          <div><a href="/profile" style="color:var(--text);font-weight:600">{{ user.name }}</a></div>
+          <small>{{ roles.get(user.role, user.role) }}</small>
+        </div>
+      </div>
+      <a class="btn s o" href="/logout" title="Keluar">{{ icon('logout') }}<span>Keluar</span></a>
+      {% endif %}
+    </header>
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% if flash %}<script id="flash-data" type="application/json">{{ flash | tojson }}</script>{% endif %}
+<dialog id="dlg-confirm">
+  <div class="hd">Konfirmasi</div>
+  <div class="bd">Yakin?</div>
+  <div class="ft">
+    <button class="btn o" type="button" data-close>Batal</button>
+    <button class="btn d" type="button" data-yes>Ya, Lanjutkan</button>
+  </div>
+</dialog>
+<div id="toasts"></div>
+</body>
+</html>

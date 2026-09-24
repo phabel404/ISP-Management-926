@@ -1,0 +1,16 @@
+{% extends "base_min.html" %}
+{% block title %}Reset Kata Sandi — SambiraPandoraBox{% endblock %}
+{% block body %}
+<h1>Reset Kata Sandi</h1>
+{% if done %}<div class="demo-note">Kata sandi berhasil diganti. Silakan <a href="/login">masuk kembali</a>.</div>
+{% elif error %}<div class="err-note">{{ error }}</div>
+{% elif not valid %}<div class="err-note">Token reset tidak valid atau belum diberikan. Gunakan menu <a href="/forgot-password">Lupa kata sandi</a>.</div>
+{% else %}
+<form method="post" class="card" style="max-width:420px"><div class="bd">
+  <input type="hidden" name="token" value="{{ token }}">
+  <div class="field"><label>Kata sandi baru</label><input name="password" type="password" required minlength="6"></div>
+  <div style="margin-top:10px"><button class="btn p">Simpan Kata Sandi Baru</button></div>
+</div></form>
+{% endif %}
+<p><a href="/login">← Kembali ke login</a></p>
+{% endblock %}

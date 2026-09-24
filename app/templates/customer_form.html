@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% set page_title = "Edit Pelanggan" if c and c.id is defined and c.id else "Tambah Pelanggan" %}
+{% block content %}
+<div class="pagehead">
+ <a class="btn o s" href="{{ '/customers/' ~ c.id if (c and c.id is defined and c.id) else '/customers' }}">{{ icon('back') }} Kembali</a>
+ <h1>{{ page_title }}</h1></div>
+{% if errors is defined and errors %}<div class="err-note"><b>Periksa kembali isian berikut:</b><ul style="margin:4px 0 0">{{ errors.values() | list | join('</li><li>', ) | safe }}</ul></div>{% endif %}
+<form method="post" action="{{ '/customers/update/' ~ c.id if (c and c.id is defined and c.id) else '/customers/create' }}">
+<div class="card"><div class="hd">Identitas</div><div class="bd"><div class="fgrid">
+ {% set v = c or {} %}{% set has = (c and c.id is defined and c.id) %}
+ <div class="field {{ 'invalid' if errors is defined and errors.name }}"><label>Nama lengkap *</label>
+  <input name="name" value="{{ v.get('name','') if v.get is defined else (v.name if has else '') }}" required></div>
+ <div class="field {{ 'invalid' if errors is defined and errors.phone }}"><label>Telepon</label>
+  <input name="phone" value="{{ v.phone if has else '' }}" placeholder="08xxxxxxxxxx"></div>
+ <div class="field {{ 'invalid' if errors is defined and errors.email }}"><label>Email</label>
+  <input name="email" type="email" value="{{ v.email if has else '' }}"></div>
+ <div class="field"><label>Tanggal pasang</label>
+  <input name="install_date" type="date" value="{{ v.install_date if has else today }}"></div>
+ <div class="field span2 {{ 'invalid' if errors is defined and errors.address }}"><label>Alamat *</label>
+  <textarea name="address" rows="2" required>{{ v.address if has else '' }}</textarea></div>
+</div></div></div>
+<div class="card"><div class="hd">Layanan & Jaringan</div><div class="bd"><div class="fgrid">
+ <div class="field"><label>Paket internet</label><select name="package_id">
+  <option value="">— belum ditentukan —</option>
+  {% for p in pkgs %}<option value="{{ p.id }}" {{ 'selected' if has and v.package_id==p.id }}>{{ p.name }} ({{ rp(p.price) }}/bln)</option>{% endfor %}</select></div>
+ <div class="field"><label>Router</label><select name="router_id">
+  <option value="">— belum ditentukan —</option>
+  {% for r in routers %}<option value="{{ r.id }}" {{ 'selected' if has and v.router_id==r.id }}>{{ r.name }} ({{ r.host }})</option>{% endfor %}</select></div>
+ <div class="field"><label>Username PPPoE</label><input name="pppoe_username" value="{{ v.pppoe_username if has else '' }}" placeholder="mis. cust-budi">
+  <div class="hint">Buat/kelola akun melalui menu PPPoE.</div></div>
+ <div class="field {{ 'invalid' if errors is defined and errors.billing_day }}"><label>Hari tagih (1–28)</label>
+  <input name="billing_day" type="number" min="1" max="28" value="{{ v.billing_day if has else settings.get('billing_day','1') }}"></div>
+ <div class="field"><label>Status pelanggan</label><select name="status">
+  {% for s,l in [('aktif','Aktif'),('suspend','Suspend'),('nonaktif','Nonaktif')] %}
+   <option value="{{ s }}" {{ 'selected' if has and v.status==s }}>{{ l }}</option>{% endfor %}</select></div>
+ <div class="field span2"><label>Catatan</label><textarea name="notes" rows="2">{{ v.notes if has else '' }}</textarea></div>
+</div></div></div>
+<div class="btnrow"><button class="btn p" type="submit">{{ icon('check') }} Simpan Pelanggan</button>
+ <a class="btn o" href="/customers">Batal</a></div>
+</form>
+{% endblock %}

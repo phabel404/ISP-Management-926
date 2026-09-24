@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% set page_title = "PPPoE" %}
+{% macro th(col,label)%}<th><a href="/pppoe?{{ qs(search=search,router=router,state=state,sort=col,dir='asc') }}">{{ label }}</a></th>{% endmacro %}
+{% block content %}
+<div class="pagehead"><h1>Akun PPPoE</h1>
+ <a class="btn p" href="/pppoe/new">+ Buat Akun</a></div>
+<div class="demo-note">{{ icon('wifi') }} <b>Adapter DEMO.</b> Data akun & sesi berasal dari database aplikasi — bukan RouterOS live. Probe REAL tersedia di halaman router.</div>
+<form class="toolbar" method="get" action="/pppoe">
+ <input type="search" name="search" placeholder="Cari username / pelanggan…" value="{{ search }}">
+ <select name="router" data-autosubmit><option value="">Semua router</option>
+  {% for r in routers %}<option value="{{ r.id }}" {{ 'selected' if router==r.id|string }}>{{ r.name }}</option>{% endfor %}</select>
+ <select name="state" data-autosubmit><option value="">Semua kondisi</option>
+  <option value="online" {{ 'selected' if state=='online' }}>Sesi online</option>
+  <option value="offline" {{ 'selected' if state=='offline' }}>Sesi offline</option>
+  <option value="aktif" {{ 'selected' if state=='aktif' }}>Status aktif</option>
+  <option value="disabled" {{ 'selected' if state=='disabled' }}>Status disabled</option></select>
+ <button class="btn" type="submit">{{ icon('filter') }} Terapkan</button><a class="btn o" href="/pppoe">Reset</a>
+</form>
+<div class="card"><div class="tblwrap"><table class="tbl">
+<tr><th>Username</th><th>Pelanggan</th><th>Profil</th><th>Router</th><th>IP</th><th>Sesi</th><th>Status</th><th>Terlihat</th><th>Aksi</th></tr>
+{% for a in rows %}<tr>
+ <td><a href="/pppoe/{{ a.id }}"><code><b>{{ a.username }}</b></code></a></td>
+ <td>{% if a.customer_id %}<a href="/customers/{{ a.customer_id }}">{{ a.cname }}</a>{% else %}<span class="muted">(tanpa pelanggan)</span>{% endif %}</td>
+ <td>{{ a.profile }}</td><td>{{ a.rname or '-' }}</td><td><code>{{ a.ip_addr or '-' }}</code></td>
+ <td>{% if a.online %}<span class="badge b-ok"><span class="dot on"></span>{{ a.session_uptime }}</span>{% else %}<span class="badge b-mute"><span class="dot off"></span>offline</span>{% endif %}</td>
+ <td>{% if a.status=='aktif' %}<span class="badge b-info">aktif</span>{% else %}<span class="badge b-err">disabled</span>{% endif %}</td>
+ <td><small>{{ a.last_seen or '-' }}</small></td>
+ <td><div class="btnrow">
+  <a class="btn s" href="/pppoe/{{ a.id }}">{{ icon('eye') }}</a>
+  <a class="btn s" href="/pppoe/{{ a.id }}/edit">{{ icon('pencil') }}</a>
+  {% if a.online %}<form class="inline" method="post" action="/pppoe/{{ a.id }}/disconnect" data-confirm="Putus sesi {{ a.username }}? (DEMO — perintah nyata tidak dikirim ke RouterOS)" data-confirm-title="Putuskan Sesi"><button class="btn s" title="Putuskan sesi">✂</button></form>{% endif %}
+ </div></td></tr>
+{% else %}<tr><td colspan="9"><div class="empty">{{ icon('network') }} Tidak ada akun yang cocok.</div></td></tr>{% endfor %}
+</table></div>{% include "partials/pager.html" %}</div>
+<p><small class="muted">{{ total }} akun · halaman {{ page }}/{{ pages }}</small></p>
+{% endblock %}

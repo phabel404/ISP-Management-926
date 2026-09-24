@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="pagehead"><a class="btn o s" href="/routers">{{ icon('back') }} Daftar</a>
+ <h1>{{ r.name }} <small class="muted">({{ r.host }})</small></h1>
+ {% if r.status=='ok' %}<span class="badge b-ok"><span class="dot on"></span>Online</span>
+ {% elif r.status=='offline' %}<span class="badge b-err"><span class="dot off"></span>Offline / Demo Tidak Terhubung</span>
+ {% else %}<span class="badge b-mute">Belum dicek</span>{% endif %}
+ <div style="flex:1"></div>
+ <form class="inline" method="post" action="/routers/{{ r.id }}/check"><input type="hidden" name="mode" value="demo"><button class="btn s">{{ icon('refresh') }} Cek Koneksi (DEMO)</button></form>
+ <form class="inline" method="post" action="/routers/{{ r.id }}/check"><input type="hidden" name="mode" value="real"><button class="btn s o" title="Probe TCP nyata ke port API RouterOS">{{ icon('refresh') }} Probe REAL</button></form>
+ <a class="btn s" href="/routers/{{ r.id }}/edit">{{ icon('pencil') }} Edit</a>
+ {% if user.role=='superadmin' %}<form class="inline" method="post" action="/routers/{{ r.id }}/delete" data-confirm="Hapus router {{ r.name }}?" data-confirm-title="Hapus Router"><button class="btn s d">{{ icon('trash') }} Hapus</button></form>{% endif %}
+</div>
+{% if r.status!='ok' %}<div class="err-note"><b>Demo / Tidak Terhubung</b> — perangkat tidak dapat dijangkau; angka di bawah bukan telemetri live.</div>
+{% else %}<div class="demo-note">Telemetri router bersumber dari <b>adapter {{ r.api_mode | upper }}</b>. Adapter REAL (API RouterOS) belum diimplementasi penuh — gunakan tombol "Probe REAL" untuk uji keterjangkauan TCP sungguhan.</div>{% endif %}
+
+<div class="tabs">
+ {% for k,l in [('ringkasan','Ringkasan'),('interface','Interface'),('pppoe','PPPoE (' ~ ppp|length ~ ')'),('hotspot','Hotspot'),('events','Event')] %}
+ <a href="?tab={{ k }}" class="{{ 'active' if tab==k }}">{{ l }}</a>{% endfor %}</div>
+
+{% if tab=='ringkasan' %}
+<div class="grid g2">
+<div class="card"><div class="hd">Informasi</div><div class="bd"><dl class="kv">
+ <dt>Host</dt><dd><code>{{ r.host }}:{{ r.port }}</code></dd><dt>Version</dt><dd>{{ r.version or '-' }}</dd>
+ <dt>Identity</dt><dd>{{ r.identity or '-' }}</dd><dt>Lokasi</dt><dd>{{ r.location or '-' }}</dd>
+ <dt>Uptime</dt><dd>{{ r.uptime }}</dd><dt>Cek terakhir</dt><dd>{{ r.last_checked or '-' }}</dd>
+</dl></div></div>
+<div class="card"><div class="hd">Resource Usage ({{ r.api_mode | upper }})</div><div class="bd">
+ <p style="margin:0 0 4px;font-size:.8rem">CPU {{ r.cpu }}%</p><div class="progress"><i class="{{ 'hot' if r.cpu>80 }}" style="width:{{ [r.cpu,100]|min }}%"></i></div>
+ <p style="margin:12px 0 4px;font-size:.8rem">Memori {{ r.mem }}%</p><div class="progress"><i class="{{ 'hot' if r.mem>85 }}" style="width:{{ [r.mem,100]|min }}%"></i></div>
+</div></div></div>
+{% elif tab=='interface' %}
+<div class="card"><div class="tblwrap"><table class="tbl"><tr><th>Interface</th><th>Tipe</th><th>Status</th><th>RX</th><th>TX</th><th>Komentar</th></tr>
+{% for i in ifs %}<tr><td><code>{{ i.name }}</code></td><td>{{ i.type }}</td>
+ <td>{% if i.running %}<span class="badge b-ok">running</span>{% else %}<span class="badge b-mute">down</span>{% endif %}</td>
+ <td class="num">{{ i.rx_mbps }} Mbps</td><td class="num">{{ i.tx_mbps }} Mbps</td><td class="wrap muted">{{ i.comment }}</td></tr>
+{% else %}<tr><td colspan="6"><div class="empty">Data interface tersedia setelah probe demo dijalankan.</div></td></tr>{% endfor %}
+</table></div><div class="bd"><small class="muted">Data interface adalah simulasi DEMO per router.</small></div></div>
+{% elif tab=='pppoe' %}
+<div class="card"><div class="tblwrap"><table class="tbl"><tr><th>Username</th><th>IP</th><th>Profil</th><th>Sesi</th><th>Status</th><th></th></tr>
+{% for a in ppp %}<tr><td><a href="/pppoe/{{ a.id }}"><code>{{ a.username }}</code></a></td><td><code>{{ a.ip_addr or '-' }}</code></td><td>{{ a.profile }}</td>
+ <td>{% if a.online %}<span class="badge b-ok">online {{ a.session_uptime }}</span>{% else %}<span class="badge b-mute">offline</span>{% endif %}</td>
+ <td>{{ a.status }}</td><td><a class="btn s" href="/pppoe/{{ a.id }}">Detail</a></td></tr>
+{% else %}<tr><td colspan="6"><div class="empty">Belum ada akun PPPoE pada router ini.</div></td></tr>{% endfor %}</table></div></div>
+{% elif tab=='hotspot' %}
+<div class="card"><div class="bd"><p>Total pengguna hotspot terdaftar di aplikasi: <b>{{ hs_count }}</b>.</p>
+<p class="muted" style="font-size:.8rem">Pencatatan hotspot dilakukan per-profil di database aplikasi (adapter DEMO); daftar pengguna aktif per-interface RouterOS belum tersedia tanpa koneksi nyata. <a href="/hotspot">Kelola pengguna →</a></p></div></div>
+{% else %}
+<div class="card"><div class="tblwrap"><table class="tbl"><tr><th>Waktu</th><th>Tipe</th><th>Pesan</th></tr>
+{% for e in evs %}<tr><td><small>{{ e.time }}</small></td>
+ <td>{% if e.type=='alert' %}<span class="badge b-err">ALERT</span>{% elif e.type=='warn' %}<span class="badge b-warn">WARN</span>{% else %}<span class="badge b-info">INFO</span>{% endif %}</td>
+ <td class="wrap">{{ e.message }}</td></tr>
+{% else %}<tr><td colspan="3"><div class="empty">Belum ada event untuk router ini.</div></td></tr>{% endfor %}</table></div></div>
+{% endif %}
+{% endblock %}
