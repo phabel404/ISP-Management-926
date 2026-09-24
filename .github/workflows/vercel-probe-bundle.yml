@@ -1,0 +1,76 @@
+name: Build Vercel probe payload
+
+on:
+  push:
+    branches:
+      - deploy/vercel-probe
+
+permissions:
+  contents: write
+
+jobs:
+  bundle:
+    if: "!contains(github.event.head_commit.message, '[skip bundle]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: deploy/vercel-probe
+
+      - name: Build inline Vercel payload
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          include = []
+          for p in Path("app").rglob("*"):
+              if not p.is_file():
+                  continue
+              s = p.as_posix()
+              if "__pycache__" in s or s.endswith(".pyc"):
+                  continue
+              include.append(p)
+
+          include.append(Path("requirements.txt"))
+
+          files = []
+          for p in include:
+              data = p.read_text(encoding="utf-8")
+              if p.as_posix() == "app/main.py":
+                  data = data.replace(
+                      "from . import db, seed as seeder, routeros, notify",
+                      'if os.environ.get("VERCEL"):\\n    os.environ.setdefault("SPB_DB", "/tmp/spb/spb.db")\\n\\nfrom . import db, seed as seeder, routeros, notify'
+                  )
+                  data = data.replace(
+                      'DATA = os.path.abspath(os.path.join(BASE, "..", "data"))',
+                      'DATA = "/tmp/spb" if os.environ.get("VERCEL") else os.path.abspath(os.path.join(BASE, "..", "data"))'
+                  )
+              files.append({"file": p.as_posix(), "data": data})
+
+          files.append({
+              "file": "pyproject.toml",
+              "data": '[project]\\nname = "isp-management-926-preview"\\nversion = "0.1.0"\\nrequires-python = ">=3.12"\\n\\n[tool.vercel]\\nentrypoint = "app.main:app"\\n'
+          })
+          files.append({
+              "file": ".python-version",
+              "data": "3.12\\n"
+          })
+          files.append({
+              "file": "vercel.json",
+              "data": '{\\n  "$schema": "https://openapi.vercel.sh/vercel.json",\\n  "functions": {\\n    "app/main.py": { "maxDuration": 60 }\\n  }\\n}\\n'
+          })
+
+          Path("vercel_payload.json").write_text(
+              json.dumps(files, ensure_ascii=False),
+              encoding="utf-8",
+          )
+
+      - name: Commit payload
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vercel_payload.json
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: build Vercel probe payload [skip bundle]"
+          git push
